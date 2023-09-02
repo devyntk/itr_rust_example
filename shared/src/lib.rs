@@ -1,14 +1,17 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+#![no_std]
+use const_format::{concatcp, assertcp_ne};
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// +================+
+//     CHANGE ME
+// +================+
+const NAME: &str = "changeme";
+// +================+
+//   GO CHANGE THAT
+// +================+
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+assertcp_ne!(NAME, "changeme", "you must change the NAME parameter");
+pub const FINDME_STRING: &str = concatcp!("findme:name=", NAME);
+pub const MULTICAST_ADDR: [u8; 4] = [239,255,70,77];
+pub const MULTICAST_PORT: u16 = 50765;
+
+pub const APPLICATION_PORT: u16 = 50767;
