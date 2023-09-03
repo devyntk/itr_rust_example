@@ -1,17 +1,17 @@
-use shared::{MULTICAST_ADDR, MULTICAST_PORT, FINDME_STRING};
+use shared::{FINDME_STRING, MULTICAST_ADDR, MULTICAST_PORT};
 
-use embassy_time::{Timer, Duration};
 use cyw43::Control;
 use cyw43_pio::PioSpi;
+use defmt::{info, unwrap};
 use embassy_executor::Spawner;
-use embassy_net::udp::{UdpSocket, PacketMetadata};
-use embassy_rp::gpio::{Level, Output};
-use embassy_rp::pio::{InterruptHandler, Pio};
+use embassy_net::udp::{PacketMetadata, UdpSocket};
+use embassy_net::{Config, Ipv4Address, Stack, StackResources};
 use embassy_rp::bind_interrupts;
+use embassy_rp::gpio::{Level, Output};
 use embassy_rp::peripherals::{DMA_CH0, PIN_23, PIN_25, PIO0};
-use embassy_net::{Config, Stack, StackResources, Ipv4Address};
+use embassy_rp::pio::{InterruptHandler, Pio};
+use embassy_time::{Duration, Timer};
 use static_cell::make_static;
-use defmt::{unwrap, info};
 
 const WIFI_NETWORK: &str = "SSID";
 const WIFI_PASSWORD: &str = "yourpass";
@@ -22,7 +22,11 @@ bind_interrupts!(struct Irqs {
 
 #[embassy_executor::task]
 async fn wifi_task(
-    runner: cyw43::Runner<'static, Output<'static, PIN_23>, PioSpi<'static, PIN_25, PIO0, 0, DMA_CH0>>,
+    runner: cyw43::Runner<
+        'static,
+        Output<'static, PIN_23>,
+        PioSpi<'static, PIN_25, PIO0, 0, DMA_CH0>,
+    >,
 ) -> ! {
     runner.run().await
 }
@@ -40,29 +44,37 @@ async fn broadcast(stack: &'static Stack<cyw43::NetDriver<'static>>) -> ! {
     let mut tx_meta_buffer = [PacketMetadata::EMPTY; 16];
 
     let mut socket = UdpSocket::new(
-        stack, 
-        &mut rx_meta_buffer, 
+        stack,
+        &mut rx_meta_buffer,
         &mut rx_buffer,
-        &mut tx_meta_buffer, 
+        &mut tx_meta_buffer,
         &mut tx_buffer,
     );
     // we're not receiving anything on this, so no addr and no port necessary
     unwrap!(socket.bind(0));
     let addr = (Ipv4Address::from_bytes(&MULTICAST_ADDR), MULTICAST_PORT);
-    loop{
+    loop {
         unwrap!(socket.send_to(FINDME_STRING.as_bytes(), addr).await);
         Timer::after(Duration::from_secs(1)).await;
     }
 }
 
-pub async fn setup_wifi(p: embassy_rp::Peripherals, spawner: &Spawner) -> Control{
+pub async fn setup_wifi(p: embassy_rp::Peripherals, spawner: &Spawner) -> Control {
     let fw = include_bytes!("../firmware/43439A0.bin");
     let clm = include_bytes!("../firmware/43439A0_clm.bin");
 
     let pwr = Output::new(p.PIN_23, Level::Low);
     let cs = Output::new(p.PIN_25, Level::High);
     let mut pio = Pio::new(p.PIO0, Irqs);
-    let spi = PioSpi::new(&mut pio.common, pio.sm0, pio.irq0, cs, p.PIN_24, p.PIN_29, p.DMA_CH0);
+    let spi = PioSpi::new(
+        &mut pio.common,
+        pio.sm0,
+        pio.irq0,
+        cs,
+        p.PIN_24,
+        p.PIN_29,
+        p.DMA_CH0,
+    );
 
     let state = make_static!(cyw43::State::new());
     let (net_device, mut control, runner) = cyw43::new(state, pwr, spi, fw).await;
@@ -96,5 +108,8 @@ pub async fn setup_wifi(p: embassy_rp::Peripherals, spawner: &Spawner) -> Contro
             }
         }
     }
+
+    unwrap!(spawner.spawn(broadcast(stack)));
+
     control
 }

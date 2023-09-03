@@ -1,6 +1,7 @@
 {
-    "rust-analyzer.linkedProjects": [
-        "./device/Cargo.toml",
-        "./device/Cargo.toml"
-    ]
+  "rust-analyzer.linkedProjects": [
+    "./device/Cargo.toml",
+    "./shared/Cargo.toml",
+    "./controller/Cargo.toml"
+  ]
 }
