@@ -4,8 +4,8 @@
 
 mod wifi;
 mod util;
+mod find;
 
-use defmt::*;
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
 use {defmt_rtt as _, panic_probe as _};
@@ -19,11 +19,11 @@ async fn main(spawner: Spawner) {
 
     let delay = Duration::from_secs(1);
     loop {
-        info!("led on!");
+        log::info!("led on!");
         control.gpio_set(0, true).await;
         Timer::after(delay).await;
 
-        info!("led off!");
+        log::info!("led off!");
         control.gpio_set(0, false).await;
         Timer::after(delay).await;
     }

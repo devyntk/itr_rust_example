@@ -1,10 +1,12 @@
 use std::time::Duration;
 
-use crossterm::event::{poll, read, Event, KeyCode};
+use crossterm::event::{poll, read, Event, KeyCode, KeyModifiers};
 use ratatui::prelude::*;
 
 #[derive(Default)]
-pub struct App {}
+pub struct App {
+    find_state: crate::find::FindState
+}
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> std::io::Result<()> {
     loop {
@@ -16,14 +18,24 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> std::io:
                     KeyCode::Char('q') => {
                         return Ok(());
                     }
+                    KeyCode::Char('c') => {
+                        if key.modifiers.contains(KeyModifiers::CONTROL) {
+                            return Ok(())
+                        }
+                    }
                     _ => {}
                 }
+
             }
         }
+        app.find_state.update();
     }
 }
 
 fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+    if app.find_state.ip.is_none() {
+        return app.find_state.ui(f);
+    }
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints(

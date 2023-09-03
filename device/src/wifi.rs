@@ -1,24 +1,27 @@
-use shared::{FINDME_STRING, MULTICAST_ADDR, MULTICAST_PORT};
-
 use cyw43::Control;
 use cyw43_pio::PioSpi;
-use defmt::{info, unwrap};
+use defmt::unwrap;
 use embassy_executor::Spawner;
-use embassy_net::udp::{PacketMetadata, UdpSocket};
-use embassy_net::{Config, Ipv4Address, Stack, StackResources};
+use embassy_net::{Config, StackResources, Stack};
 use embassy_rp::bind_interrupts;
 use embassy_rp::gpio::{Level, Output};
-use embassy_rp::peripherals::{DMA_CH0, PIN_23, PIN_25, PIO0};
-use embassy_rp::pio::{InterruptHandler, Pio};
-use embassy_time::{Duration, Timer};
+use embassy_rp::peripherals::{DMA_CH0, PIN_23, PIN_25, PIO0, USB};
+use embassy_rp::pio::Pio;
+use embassy_rp::usb::Driver;
 use static_cell::make_static;
 
 const WIFI_NETWORK: &str = "SSID";
-const WIFI_PASSWORD: &str = "yourpass";
+const WIFI_PASSWORD: &str = "pass";
 
 bind_interrupts!(struct Irqs {
-    PIO0_IRQ_0 => InterruptHandler<PIO0>;
+    PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<PIO0>;
+    USBCTRL_IRQ => embassy_rp::usb::InterruptHandler<USB>;
 });
+
+#[embassy_executor::task]
+async fn logger_task(driver: Driver<'static, USB>) {
+    embassy_usb_logger::run!(1024, log::LevelFilter::Info, driver);
+}
 
 #[embassy_executor::task]
 async fn wifi_task(
@@ -36,30 +39,11 @@ async fn net_task(stack: &'static Stack<cyw43::NetDriver<'static>>) -> ! {
     stack.run().await
 }
 
-#[embassy_executor::task]
-async fn broadcast(stack: &'static Stack<cyw43::NetDriver<'static>>) -> ! {
-    let mut rx_buffer = [0; 1024];
-    let mut tx_buffer = [0; 1024];
-    let mut rx_meta_buffer = [PacketMetadata::EMPTY; 16];
-    let mut tx_meta_buffer = [PacketMetadata::EMPTY; 16];
-
-    let mut socket = UdpSocket::new(
-        stack,
-        &mut rx_meta_buffer,
-        &mut rx_buffer,
-        &mut tx_meta_buffer,
-        &mut tx_buffer,
-    );
-    // we're not receiving anything on this, so no addr and no port necessary
-    unwrap!(socket.bind(0));
-    let addr = (Ipv4Address::from_bytes(&MULTICAST_ADDR), MULTICAST_PORT);
-    loop {
-        unwrap!(socket.send_to(FINDME_STRING.as_bytes(), addr).await);
-        Timer::after(Duration::from_secs(1)).await;
-    }
-}
-
 pub async fn setup_wifi(p: embassy_rp::Peripherals, spawner: &Spawner) -> Control {
+    let driver = Driver::new(p.USB, Irqs);
+    spawner.spawn(logger_task(driver)).unwrap();
+    log::info!("starting application");
+
     let fw = include_bytes!("../firmware/43439A0.bin");
     let clm = include_bytes!("../firmware/43439A0_clm.bin");
 
@@ -104,12 +88,13 @@ pub async fn setup_wifi(p: embassy_rp::Peripherals, spawner: &Spawner) -> Contro
         match control.join_wpa2(WIFI_NETWORK, WIFI_PASSWORD).await {
             Ok(_) => break,
             Err(err) => {
-                info!("join failed with status={}", err.status);
+                log::warn!("network join failed with status={}", err.status);
             }
         }
     }
+    log::info!("joined network successfully");
 
-    unwrap!(spawner.spawn(broadcast(stack)));
+    unwrap!(spawner.spawn(crate::find::broadcast(stack)));
 
     control
 }

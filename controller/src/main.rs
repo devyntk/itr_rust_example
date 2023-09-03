@@ -1,4 +1,5 @@
 mod app;
+mod find;
 
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
