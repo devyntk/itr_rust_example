@@ -1,5 +1,6 @@
 #![no_std]
 use const_format::{assertcp_ne, concatcp};
+use serde::{Serialize, Deserialize};
 
 // +================+
 //     CHANGE ME
@@ -8,6 +9,16 @@ pub const NAME: &str = "devyn";
 // +================+
 //   GO CHANGE THAT
 // +================+
+
+#[derive(Serialize, Deserialize)]
+pub struct ControllerMsg{
+    pub light_on: bool
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct DeviceMsg{
+    pub internal_temp: f32
+}
 
 assertcp_ne!(NAME, "changeme", "you must change the NAME parameter");
 pub const FINDME_PREFIX: &str = "findme:name=";

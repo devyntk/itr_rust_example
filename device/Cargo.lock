@@ -53,7 +53,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3ff7eb3f316534d83a8a2c3d1674ace8a5a71198eba31e2e2b597833f699b28"
 dependencies = [
- "critical-section",
+ "critical-section 1.1.2",
 ]
 
 [[package]]
@@ -62,7 +62,7 @@ version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8cf2bce30dfe09ef0bfaef228b9d414faaf7e563035494d7fe092dba54b300f4"
 dependencies = [
- "critical-section",
+ "critical-section 1.1.2",
 ]
 
 [[package]]
@@ -97,6 +97,12 @@ checksum = "5deb64efa5bd81e31fcd1938615a6d98c82eafcbcd787162b6f63b91d6bac5b3"
 dependencies = [
  "rustc_version 0.2.3",
 ]
+
+[[package]]
+name = "bare-metal"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8fe8f5a8a398345e52358e18ff07cc17a568fbca5c6f73873d3a62056309603"
 
 [[package]]
 name = "bit-set"
@@ -200,7 +206,7 @@ version = "0.7.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ec610d8f49840a5b376c69663b6369e71f4b34484b9b2eb29fb918d92516cb9"
 dependencies = [
- "bare-metal",
+ "bare-metal 0.2.5",
  "bitfield",
  "embedded-hal 0.2.7",
  "volatile-register",
@@ -233,6 +239,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "774646b687f63643eb0f4bf13dc263cb581c8c9e57973b6ddf78bda3994d88df"
 dependencies = [
  "debug-helper",
+]
+
+[[package]]
+name = "critical-section"
+version = "0.2.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1706d332edc22aef4d9f23a6bb1c92360a403013c291af51247a737472dcae6"
+dependencies = [
+ "bare-metal 1.0.0",
+ "critical-section 1.1.2",
 ]
 
 [[package]]
@@ -352,30 +368,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "defmt-rtt"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "609923761264dd99ed9c7d209718cda4631c5fe84668e0f0960124cbb844c49f"
-dependencies = [
- "critical-section",
- "defmt",
-]
-
-[[package]]
 name = "device"
 version = "0.1.0"
 dependencies = [
  "cortex-m",
  "cortex-m-rt",
+ "critical-section 0.2.8",
  "cyw43",
  "cyw43-pio",
  "defmt",
- "defmt-rtt",
  "embassy-executor",
+ "embassy-futures",
  "embassy-net",
  "embassy-rp",
+ "embassy-sync",
  "embassy-time",
- "embassy-usb-logger",
+ "embassy-usb",
  "embedded-io-async",
  "log",
  "panic-probe",
@@ -383,6 +391,7 @@ dependencies = [
  "serde",
  "shared",
  "static_cell",
+ "thiserror-core",
 ]
 
 [[package]]
@@ -441,7 +450,7 @@ source = "git+https://github.com/embassy-rs/embassy.git#ac11635b0b97b7013ef280f7
 dependencies = [
  "atomic-polyfill 1.0.3",
  "cortex-m",
- "critical-section",
+ "critical-section 1.1.2",
  "defmt",
  "embassy-macros",
  "embassy-time",
@@ -460,7 +469,7 @@ version = "0.1.0"
 source = "git+https://github.com/embassy-rs/embassy.git#ac11635b0b97b7013ef280f7e978c13e86a132b8"
 dependencies = [
  "cortex-m",
- "critical-section",
+ "critical-section 1.1.2",
  "defmt",
  "num-traits",
 ]
@@ -525,7 +534,7 @@ dependencies = [
  "cfg-if",
  "cortex-m",
  "cortex-m-rt",
- "critical-section",
+ "critical-section 1.1.2",
  "defmt",
  "embassy-embedded-hal",
  "embassy-futures",
@@ -558,7 +567,7 @@ version = "0.2.0"
 source = "git+https://github.com/embassy-rs/embassy.git#ac11635b0b97b7013ef280f7e978c13e86a132b8"
 dependencies = [
  "cfg-if",
- "critical-section",
+ "critical-section 1.1.2",
  "futures-util",
  "heapless",
 ]
@@ -570,7 +579,7 @@ source = "git+https://github.com/embassy-rs/embassy.git#ac11635b0b97b7013ef280f7
 dependencies = [
  "atomic-polyfill 1.0.3",
  "cfg-if",
- "critical-section",
+ "critical-section 1.1.2",
  "defmt",
  "embedded-hal 0.2.7",
  "embedded-hal 1.0.0-rc.1",
@@ -599,20 +608,6 @@ version = "0.1.0"
 source = "git+https://github.com/embassy-rs/embassy.git#ac11635b0b97b7013ef280f7e978c13e86a132b8"
 dependencies = [
  "defmt",
-]
-
-[[package]]
-name = "embassy-usb-logger"
-version = "0.1.0"
-source = "git+https://github.com/embassy-rs/embassy.git#ac11635b0b97b7013ef280f7e978c13e86a132b8"
-dependencies = [
- "embassy-futures",
- "embassy-sync",
- "embassy-usb",
- "futures",
- "log",
- "static_cell",
- "usbd-hid",
 ]
 
 [[package]]
@@ -1447,6 +1442,7 @@ name = "shared"
 version = "0.1.0"
 dependencies = [
  "const_format",
+ "serde",
 ]
 
 [[package]]
@@ -1577,6 +1573,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97a802ec30afc17eee47b2855fc72e0c4cd62be9b4efe6591edde0ec5bd68d8f"
 dependencies = [
  "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-core"
+version = "1.0.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d97345f6437bb2004cd58819d8a9ef8e36cdd7661c2abc4bbde0a7c40d9f497"
+dependencies = [
+ "thiserror-core-impl",
+]
+
+[[package]]
+name = "thiserror-core-impl"
+version = "1.0.38"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10ac1c5050e43014d16b2f94d0d2ce79e65ffdd8b38d8048f9c8f6a8a6da62ac"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
 ]
 
 [[package]]

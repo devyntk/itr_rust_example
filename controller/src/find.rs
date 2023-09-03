@@ -20,7 +20,7 @@ impl FindState {
         let title = Block::default()
             .borders(Borders::TOP)
             .border_style(Style::new().dark_gray())
-            .title(format!("Looking for host with name '{}' on {:?}:{:?}", shared::NAME, self.multicast_addr, shared::MULTICAST_PORT))
+            .title(format!("Looking for device with name '{}' on multicast {:?}:{:?}", shared::NAME, self.multicast_addr, shared::MULTICAST_PORT))
             .title_alignment(Alignment::Center)
             .title_style(Style::new().reset());
 
@@ -37,16 +37,19 @@ impl FindState {
             .collect();
 
         let hosts_list = List::new(hosts)
-            .block(Block::default().borders(Borders::ALL).title("Found Hosts"))
+            .block(Block::default().borders(Borders::ALL).title("Found Devices"))
             .start_corner(Corner::BottomLeft);
 
         f.render_widget(hosts_list, chunks[1]);
     }
 
     pub fn update(&mut self) {
+        if self.ip.is_some() {
+            return
+        }
         let mut buf = vec![0; 1024];
-        let recv_addr = match self.socket.recv_from(&mut buf) {
-            Ok((_bytes, recv_addr)) => recv_addr,
+        let (bytes, recv_addr) = match self.socket.recv_from(&mut buf) {
+            Ok(val) => val,
             Err(err) => {
                 match err.kind() {
                     ErrorKind::WouldBlock => return,
@@ -55,8 +58,8 @@ impl FindState {
                 }
             }
         };
-        let message = match std::str::from_utf8(&buf) {
-            Ok(s) => s.trim_matches(char::from(0)),
+        let message = match std::str::from_utf8(&buf[0..bytes]) {
+            Ok(s) => s,
             Err(_) => return,
         };
         if !message.starts_with(shared::FINDME_PREFIX) { return; }
