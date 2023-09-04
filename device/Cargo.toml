@@ -27,6 +27,7 @@ static_cell = { version = "1.1", features = ["nightly"]}
 defmt = "0.3"
 defmt-rtt = "0.4"
 log = "0.4"
+thiserror = { version = "1.0", package = "thiserror-core", default-features = false }
 panic-probe = { version = "0.3", features = ["print-defmt"] }
 embedded-io-async = { version = "0.5.0", features = ["defmt-03"] }
 

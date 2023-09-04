@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crossterm::event::{poll, read, Event, KeyCode, KeyModifiers};
-use ratatui::prelude::*;
+use ratatui::{prelude::*, widgets::{Block, Borders}};
 
 #[derive(Default)]
 pub struct App {
@@ -40,11 +40,20 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .direction(Direction::Vertical)
         .constraints(
             [
-                Constraint::Length(1),
+                Constraint::Length(2),
                 Constraint::Length(3),
                 Constraint::Min(1),
             ]
             .as_ref(),
         )
         .split(f.size());
+
+    let title = Block::default()
+        .borders(Borders::TOP)
+        .border_style(Style::new().dark_gray())
+        .title(format!("Controlling {}", app.find_state.ip.unwrap()))
+        .title_alignment(Alignment::Center)
+        .title_style(Style::new().reset());
+
+    f.render_widget(title, chunks[0]);
 }
