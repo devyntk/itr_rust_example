@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 const_format = {version = "0.2.31", features = ["assertcp"]}
 serde = {version = "1.0.188", default-features = false, features = ["derive"]}
+postcard = {version = "1.0.7", default-features = false, features = ["experimental-derive"]}
+

@@ -8,7 +8,9 @@ use embassy_rp::peripherals::{DMA_CH0, PIN_23, PIN_25, PIO0, USB};
 use embassy_rp::pio::Pio;
 use embassy_rp::usb::Driver;
 use embassy_rp::{bind_interrupts, Peripherals};
+use embassy_rp::adc::{Adc, Channel, Async};
 use static_cell::make_static;
+use core::panic::PanicInfo;
 
 const WIFI_NETWORK: &str = "SSID";
 const WIFI_PASSWORD: &str = "pass";
@@ -18,6 +20,13 @@ bind_interrupts!(pub struct Irqs {
     USBCTRL_IRQ => embassy_rp::usb::InterruptHandler<USB>;
     ADC_IRQ_FIFO => embassy_rp::adc::InterruptHandler;
 });
+
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    log::error!("{}", info);
+    embassy_rp::rom_data::reset_to_usb_boot(0, 0);
+    loop {}
+}
 
 #[embassy_executor::task]
 async fn logger_task(driver: Driver<'static, USB>) {
@@ -41,9 +50,14 @@ async fn net_task(stack: &'static Stack<cyw43::NetDriver<'static>>) -> ! {
 }
 
 pub async fn setup_wifi(
-    spawner: &Spawner,
+    spawner: Spawner,
     p: Peripherals,
-) -> (Control, &'static Stack<cyw43::NetDriver<'static>>) {
+) -> (
+    Control<'static>, 
+    &'static Stack<cyw43::NetDriver<'static>>,
+    Adc<'static, Async>,
+    Channel<'static>
+) {
     let driver = Driver::new(p.USB, Irqs);
     spawner.spawn(logger_task(driver)).unwrap();
     log::info!("starting application");
@@ -83,7 +97,7 @@ pub async fn setup_wifi(
     let stack = &*make_static!(Stack::new(
         net_device,
         config,
-        make_static!(StackResources::<2>::new()),
+        make_static!(StackResources::<4>::new()),
         seed
     ));
 
@@ -101,5 +115,10 @@ pub async fn setup_wifi(
 
     unwrap!(spawner.spawn(crate::find::broadcast(stack)));
 
-    (control, stack)
+    let adc = Adc::new(p.ADC, crate::wifi::Irqs, embassy_rp::adc::Config::default());
+    let ts = Channel::new_temp_sensor(p.ADC_TEMP_SENSOR);
+
+    control.gpio_set(0, false).await;
+
+    (control, stack, adc, ts)
 }

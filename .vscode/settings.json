@@ -3,5 +3,6 @@
     "./device/Cargo.toml",
     "./shared/Cargo.toml",
     "./controller/Cargo.toml"
-  ]
+  ],
+  "rust-analyzer.checkOnSave.allTargets": false
 }

@@ -2,6 +2,7 @@ use std::io::Write;
 use std::{io::Read, net::TcpStream, time::Duration};
 
 use crossterm::event::{poll, read, Event, KeyCode, KeyModifiers};
+use postcard::experimental::max_size::MaxSize;
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Paragraph},
@@ -48,12 +49,14 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> anyhow:
             let controller_msg = shared::ControllerMsg {
                 light_on: app.light,
             };
-            sock.write(&postcard::to_stdvec(&controller_msg)?)?;
+            sock.write_all(&postcard::to_stdvec(&controller_msg)?)?;
 
-            let mut read_vec = vec![];
-            sock.read(&mut read_vec)?;
-            let device_msg: shared::DeviceMsg = postcard::from_bytes(&read_vec)?;
+            let mut read_vec = [0u8; shared::DeviceMsg::POSTCARD_MAX_SIZE];
+            sock.read_exact(&mut read_vec)?;
+            let device_msg: shared::DeviceMsg = postcard::from_bytes(&mut read_vec)?;
             app.temp = device_msg.internal_temp;
+
+            app.sock = Some(sock);
         }
     }
 }
