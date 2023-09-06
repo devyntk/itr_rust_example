@@ -11,9 +11,6 @@ use ratatui::{
 #[derive(Default)]
 pub struct App {
     find_state: crate::find::FindState,
-    sock: Option<TcpStream>,
-    light: bool,
-    temp: f32,
 }
 
 pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> anyhow::Result<()> {
@@ -31,33 +28,11 @@ pub fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> anyhow:
                             return Ok(());
                         }
                     }
-                    KeyCode::Char(' ') => {
-                        app.light = !app.light;
-                    }
                     _ => {}
                 }
             }
         }
         app.find_state.update();
-        if let Some(ip) = app.find_state.ip {
-            if app.sock.is_none() {
-                app.sock = Some(TcpStream::connect((ip, shared::APPLICATION_PORT))?);
-            }
-
-            let mut sock = app.sock.take().unwrap();
-
-            let controller_msg = shared::ControllerMsg {
-                light_on: app.light,
-            };
-            sock.write_all(&postcard::to_stdvec(&controller_msg)?)?;
-
-            let mut read_vec = [0u8; shared::DeviceMsg::POSTCARD_MAX_SIZE];
-            sock.read_exact(&mut read_vec)?;
-            let device_msg: shared::DeviceMsg = postcard::from_bytes(&mut read_vec)?;
-            app.temp = device_msg.internal_temp;
-
-            app.sock = Some(sock);
-        }
     }
 }
 
@@ -77,19 +52,13 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
         .title_alignment(Alignment::Center)
         .title_style(Style::new().reset());
 
-    let paragraph = Paragraph::new(vec![
-        Line::from(format!(
-            "Light on: {:?} (press spacebar to change)",
-            app.light
-        )),
-        Line::from(format!("Internal temp: {:?}", app.temp)),
-    ])
-    .style(Style::default().fg(Color::Gray))
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_style(Style::new().dark_gray()),
-    );
+    let paragraph = Paragraph::new(vec![Line::from("Your implementation here!")])
+        .style(Style::default().fg(Color::Gray))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::new().dark_gray()),
+        );
 
     f.render_widget(title, chunks[0]);
     f.render_widget(paragraph, chunks[1]);

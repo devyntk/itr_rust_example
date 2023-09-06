@@ -4,5 +4,5 @@
     "./shared/Cargo.toml",
     "./controller/Cargo.toml"
   ],
-  "rust-analyzer.checkOnSave.allTargets": false
+  "rust-analyzer.cargo.unsetTest": ["core", "device"]
 }

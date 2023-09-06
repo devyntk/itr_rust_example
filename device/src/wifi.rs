@@ -1,16 +1,17 @@
+use core::panic::PanicInfo;
 use cyw43::Control;
 use cyw43_pio::PioSpi;
 use defmt::unwrap;
+use defmt_rtt as _;
 use embassy_executor::Spawner;
 use embassy_net::{Config, Stack, StackResources};
+use embassy_rp::adc::{Adc, Async, Channel};
 use embassy_rp::gpio::{Level, Output};
 use embassy_rp::peripherals::{DMA_CH0, PIN_23, PIN_25, PIO0, USB};
 use embassy_rp::pio::Pio;
 use embassy_rp::usb::Driver;
 use embassy_rp::{bind_interrupts, Peripherals};
-use embassy_rp::adc::{Adc, Channel, Async};
 use static_cell::make_static;
-use core::panic::PanicInfo;
 
 const WIFI_NETWORK: &str = "SSID";
 const WIFI_PASSWORD: &str = "pass";
@@ -53,10 +54,10 @@ pub async fn setup_wifi(
     spawner: Spawner,
     p: Peripherals,
 ) -> (
-    Control<'static>, 
+    Control<'static>,
     &'static Stack<cyw43::NetDriver<'static>>,
     Adc<'static, Async>,
-    Channel<'static>
+    Channel<'static>,
 ) {
     let driver = Driver::new(p.USB, Irqs);
     spawner.spawn(logger_task(driver)).unwrap();
