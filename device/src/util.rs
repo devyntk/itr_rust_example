@@ -8,7 +8,7 @@ pub fn convert_to_celsius(raw_temp: u16) -> f32 {
 }
 
 #[derive(Debug)]
-enum DeviceError {
+pub enum DeviceError {
     Postcard(postcard::Error),
     Tcp(embassy_net::tcp::Error),
     Write(embedded_io_async::WriteAllError<embassy_net::tcp::Error>),

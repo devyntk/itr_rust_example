@@ -13,8 +13,8 @@ use embassy_rp::usb::Driver;
 use embassy_rp::{bind_interrupts, Peripherals};
 use static_cell::make_static;
 
-const WIFI_NETWORK: &str = "SSID";
-const WIFI_PASSWORD: &str = "pass";
+const WIFI_NETWORK: &str = "crabs";
+const WIFI_PASSWORD: &str = "rustisgood";
 
 bind_interrupts!(pub struct Irqs {
     PIO0_IRQ_0 => embassy_rp::pio::InterruptHandler<PIO0>;
